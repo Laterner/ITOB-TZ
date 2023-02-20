@@ -26,19 +26,23 @@
             height: 300px;
         }
         .button{
-            margin: 10px 11px;
+            margin: 10px 10px;
             width: 110px;
             height: 40px;
             border-radius: 10px;
             border: 2px solid black;
             font-size: 16px;
             font-weight: bold;
+            display: inline-block;
         }
         .on{
             background-color: green;
         }
         .off{
             background-color: red;
+        }
+        .wat{
+            width: 120px;
         }
         .message{
             width: 360px;
@@ -61,6 +65,13 @@
             border-radius: 20px;
             border: 1px solid black;
         }
+        #water_vol{
+            display: block;
+            margin: 0 auto;
+            width: 360px;
+            height: 20px;
+            border-radius: 5px;
+        }
     </style>
     <head>
         <meta charset='UTF-8'>
@@ -72,10 +83,10 @@
             <div class="conteiner">
                 <img class="kettle-image" src="/static/images/1.png">
                 <div class="message" id="messageConteiner"></div>
-                <input type="text" name="water_vol" id="water_vol" onkeypress='validate(event)' >
+                <input type="text" placeholder="Введите объём воды от 0 до 1" name="water_vol" id="water_vol" onkeypress='validate(event)' >
                 <button class='button on' onClick='onButtonStartClick()'>Включить</button>
                 <button class='button off' onClick='onButtonStopClick()'>Выключить</button>
-                <button class='button' onClick='onWaterButtonClick()'>Вода</button>
+                <button class='button wat' onClick='onWaterButtonClick()'>Залить воду</button>
             </div>
         </div>
     </body>
