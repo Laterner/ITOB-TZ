@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang='ru'>
+    <style>
+        *{
+            font-family: 'Ubuntu Bold Italic', arial;
+        }
+        body{
+            margin: 0;
+        }
+        .conteiner-wrapper{
+            width: 100%;
+            height: 100%;
+        }
+        .conteiner{
+            display: block;
+            width: 410px;
+            height: 550px;
+            margin-top: 40px;
+            margin-left: calc(100vw / 2 - 205px);
+            /*border: 1px black solid;*/
+        }
+        .kettle-image{
+            display: block;
+            margin: 5px auto;
+            width: 300px;
+            height: 300px;
+        }
+        .button{
+            margin: 10px 11px;
+            width: 110px;
+            height: 40px;
+            border-radius: 10px;
+            border: 2px solid black;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .on{
+            background-color: green;
+        }
+        .off{
+            background-color: red;
+        }
+        .message{
+            width: 360px;
+            height: 150px;
+            margin: 10px auto;
+            overflow: auto;
+            border-radius: 10px;
+            border: 1px solid black;
+            padding: 0 5px;
+        }
+        .message::-webkit-scrollbar {
+            width: 8px; /* ширина scrollbar */
+        }
+        .message::-webkit-scrollbar-track {
+            background: white; /* цвет дорожки */
+            border-radius: 10px;
+        }
+        .message::-webkit-scrollbar-thumb {
+            background-color: rgb(200, 200, 200); 
+            border-radius: 20px;
+            border: 1px solid black;
+        }
+    </style>
+    <head>
+        <meta charset='UTF-8'>
+        <title>Title</title>
+        <link rel='icon' type='image/x-icon' href='/static/images/favicon.ico'>
+    </head>
+    <body>
+        <div class="conteiner-wrapper">
+            <div class="conteiner">
+                <img class="kettle-image" src="/static/images/1.png">
+                <div class="message" id="messageConteiner"></div>
+                <input type="text" name="water_vol" id="water_vol" onkeypress='validate(event)' >
+                <button class='button on' onClick='onButtonStartClick()'>Включить</button>
+                <button class='button off' onClick='onButtonStopClick()'>Выключить</button>
+                <button class='button' onClick='onWaterButtonClick()'>Вода</button>
+            </div>
+        </div>
+    </body>
+</html>
+
+<script>
+    /* Создание сокета */
+    let socket = new WebSocket('ws://localhost:5000/');
+    var activeFlag = false
+
+    /* Открыть соединение */
+    socket.onopen = function(e) {
+        addToConsole('Соединение установлено', 'sys');
+    };
+
+    /* Обработка комманд */
+    socket.onmessage = function(event) {
+        var _data = JSON.parse(event.data)
+        console.log(event.data)
+
+        if(_data.type == 'power_off' && activeFlag) {
+            activeFlag = false
+            addToConsole(_data.message, 'temperature');
+        }
+        else {
+            addToConsole(_data.message, _data.type);
+        }
+    };
+
+    /* Действие при закрытии соединения */
+    socket.onclose = function(event) {
+        if (event.wasClean) {
+            addToConsole('Соединение закрыто чисто, код=${event.code} причина=${event.reason}');
+        } else {
+            addToConsole('Соединение прервано', 'error');
+        }
+    };
+
+    /* Ошибки соединения */
+    socket.onerror = function(error) {
+        console.log(error)
+        addToConsole('Произошла ошибка в ' + error.target, 'error');
+    };
+
+    /* Включание чайника */
+    function onButtonStartClick(){
+        activeFlag = true
+        socket.send('start')
+    }
+
+    /* Выключение чайника */
+    function onButtonStopClick(){
+        activeFlag = false
+        socket.send('stop')
+    }
+
+    /* Налить воды в чайник */
+    function onWaterButtonClick(){
+        var vol = document.getElementById('water_vol').value
+        socket.send(`vol${vol}`)
+    }
+
+    /* Запрос температуры */
+    function GetTemperature(){
+        if(activeFlag) socket.send('temperature')
+    }
+    setInterval(GetTemperature, 1000)
+
+    /* Проверка корректности ввода объёма воды */
+    function validate(event) {
+        var theEvent = event || window.event;
+        /* Обработчик фунции вставки */
+        if (theEvent.type === 'paste') {
+            key = event.clipboardData.getData('text/plain');
+        } else {
+        /* Обработчик нажатия клавиш */ 
+            var key = theEvent.keyCode || theEvent.which;
+            key = String.fromCharCode(key);
+        }
+
+        /* Проверка на правильность ввода */
+        var regex = /[0-9]|\./;
+        if( !regex.test(key) ) {
+            theEvent.returnValue = false;
+            if(theEvent.preventDefault) theEvent.preventDefault();
+        }
+    }
+
+    function addToConsole(message, type) {
+        var message_color = 'green';
+        let el = document.getElementById("messageConteiner");
+
+        if (type == 'sys') message_color = "blue"
+        else if (type == 'error') message_color = "red"
+        else if (type == 'close') message_color = "red"
+
+        typeSelector = `[<type style="color: ${message_color};">` + type + '</type>]';
+        el.insertAdjacentHTML('afterbegin', `<p>${typeSelector} ${message}</p>`);
+    }
+</script>
